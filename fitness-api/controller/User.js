@@ -1,5 +1,7 @@
 const User = require('../models/User.js');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
 
 const signUp = async (req, res) => {
     try {
@@ -16,9 +18,24 @@ const signUp = async (req, res) => {
             email,
             password: hashedPassword,
         });
-        console.log(newUser);
         await newUser.save();
-        return res.status(201).json({ message: "User registered successfully" });
+        
+        // Create token
+        const token = jwt.sign(
+            { id: newUser._id }, 
+            process.env.JWT_SECRET,
+            { expiresIn: '30d' }
+        );
+
+        return res.status(201).json({ 
+            message: "User registered successfully",
+            token,
+            user: {
+                id: newUser._id,
+                name: newUser.name,
+                email: newUser.email
+            }
+        });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Server Error" });
@@ -38,13 +55,26 @@ const Login = async (req, res) => {
         if (!isValidPassword) {
             return res.status(400).json({ message: "Invalid Password" });
         }
+
+        // Create token
+        const token = jwt.sign(
+            { id: existingUser._id }, 
+            process.env.JWT_SECRET,
+            { expiresIn: '30d' }
+        );
+
         return res.status(200).json({
             message: "Login successful",
+            token,
+            user: {
+                id: existingUser._id,
+                name: existingUser.name,
+                email: existingUser.email
+            }
         });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Server Error" });
     }
 };
-
 module.exports = { signUp, Login };

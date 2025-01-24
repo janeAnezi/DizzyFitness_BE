@@ -5,13 +5,14 @@ const cors = require('cors')
 const fitness = require('./gymData.json');
 const mongoose = require('mongoose')
 const routes = require('./Routes/routes.js')
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 
 const app = express()
 // middleware
 app.use(cors())
-app.use(express.urlencoded({limit:"50mb"}))
 app.use(bodyParser.json())
+app.use(express.urlencoded({limit:"50mb"}))
 app.use(bodyParser.urlencoded({ extended: true }))
 
 
@@ -29,14 +30,23 @@ app.get('/fitness', (req, res) => {
 });
 
 
+app.use('/api', routes);
+
+app.use((err, req, res, next) => {
+  console.error('Internal Server Error:', err);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
 
 
 mongoose
-.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true, 
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 10000,
+ })
   .then(()=>{console.log('DB Connected')})
   .catch((error)=>{console.log(error)})
-
-  app.use('/api', routes)
 
 
 app.listen(port, () => {
